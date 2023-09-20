@@ -2,7 +2,7 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+// import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RPSContract {
   using SafeMath for uint256;
@@ -24,9 +24,9 @@ contract RPSContract {
   constructor(
     uint256 _arbiterFeePercentage
   ) {
-    arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
+    // arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
     // change this to match an address on your local network
-    // arbiter = payable(0xd48F4dB09c457D6C8c4220959E359E3Ad7924ABc);
+    arbiter = payable(0x0bAdd78E46E443b213B0c6B3a35ad1686c2B697c);
     arbiterFeePercentage = _arbiterFeePercentage;
   }
 
@@ -74,19 +74,22 @@ contract RPSContract {
   }
 }
 
-contract RPSContractFactory is Ownable {
+// contract RPSContractFactory is Ownable {
+contract RPSContractFactory {
   address[] contracts;
 
   event ContractCreated(address indexed _contract);
 
-  function createContract(uint arbiterFeePercentage) public onlyOwner {
+//  function createContract(uint arbiterFeePercentage) public onlyOwner {
+  function createContract(uint arbiterFeePercentage) public {
     RPSContract newContract = new RPSContract(arbiterFeePercentage);
     contracts.push(address(newContract));
 
     emit ContractCreated(address(newContract));
   }
 
-  function getContracts() public onlyOwner view returns (address[] memory) {
+  // function getContracts() public onlyOwner view returns (address[] memory) {
+  function getContracts() public view returns (address[] memory) {
     return contracts;
   }
 }
