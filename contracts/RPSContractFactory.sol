@@ -98,6 +98,6 @@ contract RPSContractFactory {
 
   function getLatestContract() public view returns (address) {
     require(contracts.length > 0, "No contracts available");
-      return contracts[contracts.length - 1];
+    return contracts[contracts.length - 1];
   }
 }
