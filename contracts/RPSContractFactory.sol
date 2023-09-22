@@ -2,6 +2,7 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 // import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RPSContract {
@@ -21,19 +22,17 @@ contract RPSContract {
   event Draw(address indexed _party1, address indexed _party2, uint _value);
   event Log(string message);
 
-  constructor(
-    uint256 _arbiterFeePercentage
-  ) {
+  constructor(uint256 _arbiterFeePercentage) {
     arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
     // change this to match an address on your local network
     // arbiter = payable(0x0bAdd78E46E443b213B0c6B3a35ad1686c2B697c);
     arbiterFeePercentage = _arbiterFeePercentage;
   }
 
-  function joinContract() public payable{
+  function joinContract() public payable {
     require(party1 == address(0) || party2 == address(0), "Game is full");
     require(msg.value > 0, "Must stake a positive amount of ether");
-    
+
     if (party1 == address(0)) {
       party1 = payable(msg.sender);
       stake1 = msg.value;
@@ -50,11 +49,15 @@ contract RPSContract {
   }
 
   function decideWinner(address payable winner) public {
-    require(msg.sender == arbiter, "Only the arbiter can decide the winner");
     require(
-      party1Paid && party2Paid, "All parties must have paid their stakes"
+      msg.sender == arbiter,
+      "Only the arbiter can decide the winner"
     );
-    
+    require(
+      party1Paid && party2Paid,
+      "All parties must have paid their stakes"
+    );
+
     uint256 totalStake = stake1.add(stake2);
     uint256 arbiterFee = totalStake.mul(arbiterFeePercentage).div(10000);
     uint256 winnerPrize = totalStake.sub(arbiterFee);
@@ -67,7 +70,7 @@ contract RPSContract {
       party2.transfer(stake2.sub(halfArbiterFee));
       emit Draw(party1, party2, totalStake);
     } else {
-      arbiter.transfer(arbiterFee); // Pay arbiter their fee 
+      arbiter.transfer(arbiterFee); // Pay arbiter their fee
       winner.transfer(winnerPrize); // Pay winner their stake and the winner prize
       emit WinnerDecided(winner, winnerPrize);
     }
@@ -80,7 +83,7 @@ contract RPSContractFactory {
 
   event ContractCreated(address indexed _contract);
 
-//  function createContract(uint arbiterFeePercentage) public onlyOwner {
+  //  function createContract(uint arbiterFeePercentage) public onlyOwner {
   function createContract(uint arbiterFeePercentage) public {
     RPSContract newContract = new RPSContract(arbiterFeePercentage);
     contracts.push(address(newContract));
@@ -91,5 +94,10 @@ contract RPSContractFactory {
   // function getContracts() public onlyOwner view returns (address[] memory) {
   function getContracts() public view returns (address[] memory) {
     return contracts;
+  }
+
+  function getLatestContract() public view returns (address) {
+    require(contracts.length > 0, "No contracts available");
+      return contracts[contracts.length - 1];
   }
 }
