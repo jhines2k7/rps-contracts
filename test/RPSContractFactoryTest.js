@@ -3,6 +3,7 @@ const RPSContract = artifacts.require("RPSContract");
 
 contract("RPSContractFactory", (accounts) => {
   let rpsContractFactory;
+  const owner = accounts[0]// '0xE04870e9b9f26DFA4976307E721E7Ee2f979f874'; //Update this with the actual owner address
 
   beforeEach(async () => {
     rpsContractFactory = await RPSContractFactory.new();
@@ -74,5 +75,23 @@ contract("RPSContractFactory", (accounts) => {
     assert.equal(contracts[1], contractAddress2, "Second contract address is incorrect");
     assert.equal(contracts[2], contractAddress3, "Third contract address is incorrect");
     assert.equal(contracts[3], contractAddress4, "Fourth contract address is incorrect");
+  });
+
+  it('getContracts should return all contracts created by owner', async () => {
+    await rpsContractFactory.createContract(2, {from: owner});
+    await rpsContractFactory.createContract(3, {from: owner});
+    await rpsContractFactory.createContract(4, {from: owner});
+
+    const contracts = await rpsContractFactory.getContracts({from: owner}); 
+    assert.equal(contracts.length, 3); 
+  });
+
+  it('getContracts should fail if called by other than owner', async () => {
+    try {
+      await rpsContractFactory.getContracts({from: accounts[0]}); //
+      assert.fail('Expected getContracts to throw error');
+    } catch (err) {
+      assert.include(err.message, 'revert Only the contract owner can view all contracts', 'Expected revert for non-owner'); 
+    }
   });
 });

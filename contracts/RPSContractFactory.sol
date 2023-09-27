@@ -3,8 +3,6 @@ pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-// import "@openzeppelin/contracts/access/Ownable.sol";
-
 contract RPSContract {
   using SafeMath for uint256;
 
@@ -77,13 +75,18 @@ contract RPSContract {
   }
 }
 
-// contract RPSContractFactory is Ownable {
 contract RPSContractFactory {
   address[] contracts;
+  address payable contractOwner;
 
   event ContractCreated(address indexed _contract);
 
-  //  function createContract(uint arbiterFeePercentage) public onlyOwner {
+  constructor() {
+    contractOwner = payable(0xE04870e9b9f26DFA4976307E721E7Ee2f979f874);
+    // change this to match an address on your local network
+    // contractOwner = payable(0xE04870e9b9f26DFA4976307E721E7Ee2f979f874);
+  }
+
   function createContract(uint arbiterFeePercentage) public {
     RPSContract newContract = new RPSContract(arbiterFeePercentage);
     contracts.push(address(newContract));
@@ -91,8 +94,11 @@ contract RPSContractFactory {
     emit ContractCreated(address(newContract));
   }
 
-  // function getContracts() public onlyOwner view returns (address[] memory) {
   function getContracts() public view returns (address[] memory) {
+    require(
+      msg.sender == contractOwner,
+      "Only the contract owner can view all contracts"
+    );
     return contracts;
   }
 
