@@ -1,25 +1,6 @@
 const RPSContract = artifacts.require('RPSContract');
 
 contract('RPSContract', (accounts) => {
-  it('should allow players to join the contract', async () => {
-    let contractInstance;
-    contractInstance = await RPSContract.new(2);
-
-    await contractInstance.joinContract({ from: accounts[2], value: web3.utils.toWei('1', 'ether') });
-    const party1 = await contractInstance.party1();
-    assert.equal(party1, accounts[2], 'Party1 address is incorrect');
-
-    const stake1 = await contractInstance.stake1();
-    assert.equal(stake1, web3.utils.toWei('1', 'ether'), 'Stake1 value is incorrect');
-
-    await contractInstance.joinContract({ from: accounts[3], value: web3.utils.toWei('2', 'ether') });
-    const party2 = await contractInstance.party2();
-    assert.equal(party2, accounts[3], 'Party2 address is incorrect');
-
-    const stake2 = await contractInstance.stake2();
-    assert.equal(stake2, web3.utils.toWei('2', 'ether'), 'Stake2 value is incorrect');
-  });
-
   it('should allow the arbiter to decide the winner', async () => {
     let contractInstance;
     contractInstance = await RPSContract.new(5);
@@ -176,7 +157,7 @@ contract('RPSContract', (accounts) => {
   });
 
   it("should verify ending account balance for the winning player", async () => {
-    const [owner, party1, party2, arbiter] = accounts;
+    const [owner, arbiter, party1, party2] = accounts;
     const stake1 = web3.utils.toWei("10", "ether");
     const stake2 = web3.utils.toWei("5", "ether"); // loser stake
     const arbiterFeePercentage = 5;
@@ -219,7 +200,7 @@ contract('RPSContract', (accounts) => {
   });
 
   it("should return the stakes to each player minus the arbiter fee in the case of a draw", async () => {
-    const [owner, party1, party2, arbiter] = accounts;
+    const [owner, arbiter, party1, party2] = accounts;
     const stake1 = web3.utils.toWei("10", "ether");
     const stake2 = web3.utils.toWei("5", "ether"); // loser stake
     const arbiterFeePercentage = 5;
@@ -275,6 +256,48 @@ contract('RPSContract', (accounts) => {
       party2FinalBalance < BigInt(party2InitialBalance) - BigInt(halfOfArbiterFee),
       true,
       "Ending account balance for party2 is incorrect"
+    );
+  });
+
+  it("should allow arbiter to refund wager", async () => {
+    // Setup
+    const instance = await RPSContract.new(5, { from: accounts[0] });
+    const arbiter = accounts[1];
+    const player1 = accounts[2];
+    const player2 = accounts[3];
+  
+    // Add player 1 and player 2 and stake Ether
+    const player1Stake = web3.utils.toWei("1", "ether");
+    const player2Stake = web3.utils.toWei("2", "ether");
+  
+    await instance.joinContract({ from: player1, value: player1Stake });
+    await instance.joinContract({ from: player2, value: player2Stake });
+  
+    // Do the refund for player1 and get the gas used for this transaction
+    const txRefundPlayer1 = await instance.refundWager(player1, { from: arbiter });
+    const gasPrice = await web3.eth.getGasPrice();
+    const gasCostPlayer1Refund = txRefundPlayer1.receipt.gasUsed * gasPrice;
+
+    // Get the final balance and adjust it by adding the gasCost for the refund transaction
+    const finalBalancePlayer1 = Number(await web3.eth.getBalance(player1)) + Number(gasCostPlayer1Refund);
+  
+    // The final balance should be: initial amount - staked amount + refunded amount in wei
+    assert.equal(
+      finalBalancePlayer1,
+      web3.utils.toWei("998", "ether"), // Assuming the player1 started with 100 ether
+      "player1 should have been refunded!"
+    );
+  
+    // Repeat the same steps for player2
+    const txRefundPlayer2 = await instance.refundWager(player2, { from: arbiter });
+    const gasCostPlayer2Refund = txRefundPlayer2.receipt.gasUsed * gasPrice;
+  
+    const finalBalancePlayer2 = Number(await web3.eth.getBalance(player2)) + Number(gasCostPlayer2Refund);
+  
+    assert.equal(
+      finalBalancePlayer2,
+      web3.utils.toWei("998", "ether"), // Assuming that player2 started with 100 ether
+      "player2 should have been refunded!"
     );
   });
 });

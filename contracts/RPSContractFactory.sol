@@ -21,9 +21,9 @@ contract RPSContract {
   event Log(string message);
 
   constructor(uint256 _arbiterFeePercentage) {
-    arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
+    // arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
     // change this to match an address on your local network
-    // arbiter = payable(0x0bAdd78E46E443b213B0c6B3a35ad1686c2B697c);
+    arbiter = payable(0x83C0ad251740524e7274a1F0C1e6a13B543AEb66);
     arbiterFeePercentage = _arbiterFeePercentage;
   }
 
@@ -43,6 +43,21 @@ contract RPSContract {
       stake2 = msg.value;
       emit Log("Party 2 joined and paid stake");
       emit StakePaid(msg.sender, msg.value);
+    }
+  }
+
+  function refundWager(address payable payee) public {
+    require(
+      msg.sender == arbiter,
+      "Only the arbiter can issue a refund"
+    );
+
+    if (payee == party1) {
+      party1.transfer(stake1);
+      emit Log("Arbiter refunded the stake to Party 1");
+    } else {
+      party2.transfer(stake2);
+      emit Log("Arbiter refunded the stake to Party 2");
     }
   }
 
@@ -82,12 +97,16 @@ contract RPSContractFactory {
   event ContractCreated(address indexed _contract);
 
   constructor() {
-    contractOwner = payable(0xE04870e9b9f26DFA4976307E721E7Ee2f979f874);
-    // change this to match an address on your local network
     // contractOwner = payable(0xE04870e9b9f26DFA4976307E721E7Ee2f979f874);
+    // change this to match an address on your local network
+    contractOwner = payable(0xCe8cac877eC42fFa9D508e6775f56a8C3fFB2897);
   }
 
   function createContract(uint arbiterFeePercentage) public {
+    require(
+      msg.sender == contractOwner,
+      "Only the contract owner can create a contract"
+    );
     RPSContract newContract = new RPSContract(arbiterFeePercentage);
     contracts.push(address(newContract));
 
