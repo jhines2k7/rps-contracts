@@ -21,9 +21,9 @@ contract RPSContract {
   event Log(string message);
 
   constructor(uint256 _arbiterFeePercentage) {
-    // arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
+    arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
     // change this to match an address on your local network
-    arbiter = payable(0xE17169DE511D9CbDb26bcBF81a1A8A57B5b83efb);
+    // arbiter = payable(0xE17169DE511D9CbDb26bcBF81a1A8A57B5b83efb);
     arbiterFeePercentage = _arbiterFeePercentage;
   }
 
@@ -97,9 +97,9 @@ contract RPSContractFactory {
   event ContractCreated(address indexed _contract);
 
   constructor() {
-    // contractOwner = payable(0xE04870e9b9f26DFA4976307E721E7Ee2f979f874);
+    contractOwner = payable(0xE04870e9b9f26DFA4976307E721E7Ee2f979f874);
     // change this to match an address on your local network
-    contractOwner = payable(0x9153Fef7c1b94e3483c44df10c9ce9744DAeD0b7);
+    // contractOwner = payable(0x9153Fef7c1b94e3483c44df10c9ce9744DAeD0b7);
   }
 
   function createContract(uint arbiterFeePercentage) public {
