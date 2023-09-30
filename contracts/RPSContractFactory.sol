@@ -2,6 +2,7 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract RPSContract {
   using SafeMath for uint256;
@@ -21,9 +22,9 @@ contract RPSContract {
   event Log(string message);
 
   constructor(uint256 _arbiterFeePercentage) {
-    arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
+    // arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
     // change this to match an address on your local network
-    // arbiter = payable(0xE17169DE511D9CbDb26bcBF81a1A8A57B5b83efb);
+    arbiter = payable(0xa590A5a230E185Ab602ee46FDdC6a96f7Bc9F219);
     arbiterFeePercentage = _arbiterFeePercentage;
   }
 
@@ -90,42 +91,23 @@ contract RPSContract {
   }
 }
 
-contract RPSContractFactory {
+contract RPSContractFactory is Ownable{
   address[] contracts;
-  address payable contractOwner;
 
   event ContractCreated(address indexed _contract);
 
-  constructor() {
-    contractOwner = payable(0xE04870e9b9f26DFA4976307E721E7Ee2f979f874);
-    // change this to match an address on your local network
-    // contractOwner = payable(0x9153Fef7c1b94e3483c44df10c9ce9744DAeD0b7);
-  }
-
-  function createContract(uint arbiterFeePercentage) public {
-    require(
-      msg.sender == contractOwner,
-      "Only the contract owner can create a contract"
-    );
+  function createContract(uint arbiterFeePercentage) public onlyOwner {
     RPSContract newContract = new RPSContract(arbiterFeePercentage);
     contracts.push(address(newContract));
 
     emit ContractCreated(address(newContract));
   }
 
-  function getContracts() public view returns (address[] memory) {
-    require(
-      msg.sender == contractOwner,
-      "Only the contract owner can view all contracts"
-    );
+  function getContracts() public onlyOwner view returns (address[] memory) {
     return contracts;
   }
 
-  function getLatestContract() public view returns (address) {
-    require(
-      msg.sender == contractOwner,
-      "Only the contract owner can get the latest contract"
-    );
+  function getLatestContract() public onlyOwner() view returns (address) {
     require(contracts.length > 0, "No contracts available");
     return contracts[contracts.length - 1];
   }
