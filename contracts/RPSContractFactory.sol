@@ -24,7 +24,7 @@ contract RPSContract {
   constructor(uint256 _arbiterFeePercentage) {
     // arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
     // change this to match an address on your local network
-    arbiter = payable(0x060DE3a3303ED67CE969D4C06B1D76AB24F05F30);
+    arbiter = payable(0xF82ef9128277d361c0c56fE79648133415429776);
     arbiterFeePercentage = _arbiterFeePercentage;
   }
 
