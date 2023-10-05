@@ -15,17 +15,19 @@ contract RPSContract {
   bool party1Paid;
   bool party2Paid;
   uint256 arbiterFeePercentage;
+  string gameId;
 
   event StakePaid(address indexed _from, uint _value);
   event WinnerDecided(address indexed _winner, uint _value);
   event Draw(address indexed _party1, address indexed _party2, uint _value);
   event Log(string message);
 
-  constructor(uint256 _arbiterFeePercentage) {
+  constructor(uint256 _arbiterFeePercentage, string memory _gameId) {
     // arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
     // change this to match an address on your local network
-    arbiter = payable(0xF82ef9128277d361c0c56fE79648133415429776);
+    arbiter = payable(0xeE74a8bd40cB283a311aaF261F1d4FEe5301d32D);
     arbiterFeePercentage = _arbiterFeePercentage;
+    gameId = _gameId;
   }
 
   function joinContract() public payable {
@@ -96,7 +98,7 @@ contract RPSContractFactory is Ownable{
 
   event ContractCreated(address indexed _contract);
 
-  function createContract(uint arbiterFeePercentage) public onlyOwner {
+  function createContract(uint arbiterFeePercentage, string gameId) public onlyOwner {
     RPSContract newContract = new RPSContract(arbiterFeePercentage);
     contracts.push(address(newContract));
 

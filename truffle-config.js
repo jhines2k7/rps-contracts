@@ -88,7 +88,7 @@ module.exports = {
     // Useful for deploying to a public network.
     // Note: It's important to wrap the provider as a function to ensure truffle uses a new provider every time.
     goerli: {
-      provider: () => new HDWalletProvider(process.env.CONTRACT_OWNER_PRIVATE_KEY, process.env.HTTP_PROVIDER),
+      provider: () => new HDWalletProvider(CONTRACT_OWNER_PRIVATE_KEY, HTTP_PROVIDER),
       network_id: 5, // Goerli's id
       gas: 8500000, // Gas limit - set it to your contract needs
       confirmations: 2, // # of confs to wait between deployments. (default: 0)
