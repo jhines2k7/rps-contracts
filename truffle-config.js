@@ -70,7 +70,7 @@ module.exports = {
       network_id: "*",       // Any network (default: none)
     },
     ganache: {
-      host: "ganache.generalsolutions43.com",     // Localhost (default: none)
+      host: "ganache.generalsolutions43.com",     // ganache (default: none)
       port: 8545,            // Standard Ethereum port (default: none)
       network_id: "*",       // Any network (default: none)
     },

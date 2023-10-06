@@ -4,7 +4,7 @@ pragma solidity >=0.4.22 <0.9.0;
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract RPSContract {
+contract RPSContract is Ownable{
   using SafeMath for uint256;
 
   address payable party1;
@@ -12,25 +12,25 @@ contract RPSContract {
   address payable arbiter;
   uint256 stake1;
   uint256 stake2;
+  uint256 totalStake;
+  uint256 arbiterFee;
   bool party1Paid;
   bool party2Paid;
   uint256 arbiterFeePercentage;
-  string gameId;
+  string contractGameId;
 
   event StakePaid(address indexed _from, uint _value);
   event WinnerDecided(address indexed _winner, uint _value);
   event Draw(address indexed _party1, address indexed _party2, uint _value);
   event Log(string message);
 
-  constructor(uint256 _arbiterFeePercentage, string memory _gameId) {
-    // arbiter = payable(0x3b10f9d3773172f2f74bB1Bb8EfBCF18626b3bE8);
-    // change this to match an address on your local network
-    arbiter = payable(0xeE74a8bd40cB283a311aaF261F1d4FEe5301d32D);
+  constructor(uint256 _arbiterFeePercentage, string memory _gameId) Ownable(){
     arbiterFeePercentage = _arbiterFeePercentage;
-    gameId = _gameId;
+    contractGameId = _gameId;
   }
 
-  function joinContract() public payable {
+  function joinContract(string memory gameId) public payable {
+    require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
     require(party1 == address(0) || party2 == address(0), "Game is full");
     require(msg.value > 0, "Must stake a positive amount of ether");
 
@@ -49,33 +49,26 @@ contract RPSContract {
     }
   }
 
-  function refundWager(address payable payee) public {
-    require(
-      msg.sender == arbiter,
-      "Only the arbiter can issue a refund"
-    );
+  function refundWager(address payable payee, string memory gameId) public onlyOwner {
+    require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
 
     if (payee == party1) {
       party1.transfer(stake1);
-      emit Log("Arbiter refunded the stake to Party 1");
+      emit Log("Contract owner refunded the stake to Party 1");
     } else {
       party2.transfer(stake2);
-      emit Log("Arbiter refunded the stake to Party 2");
+      emit Log("Contract owner refunded the stake to Party 2");
     }
   }
 
-  function decideWinner(address payable winner) public {
-    require(
-      msg.sender == arbiter,
-      "Only the arbiter can decide the winner"
-    );
+  function decideWinner(address payable winner) public onlyOwner {
     require(
       party1Paid && party2Paid,
       "All parties must have paid their stakes"
     );
 
-    uint256 totalStake = stake1.add(stake2);
-    uint256 arbiterFee = totalStake.mul(arbiterFeePercentage).div(10000);
+    totalStake = stake1.add(stake2);
+    arbiterFee = totalStake.mul(arbiterFeePercentage).div(10000);
     uint256 winnerPrize = totalStake.sub(arbiterFee);
 
     if (winner == arbiter) {
@@ -91,18 +84,23 @@ contract RPSContract {
       emit WinnerDecided(winner, winnerPrize);
     }
   }
+
+  function setArbiter(address payable _arbiter) public onlyOwner {
+    arbiter = _arbiter;
+  }
 }
 
 contract RPSContractFactory is Ownable{
   address[] contracts;
 
-  event ContractCreated(address indexed _contract);
+  event ContractCreated(address indexed _contract, string gameId);
 
-  function createContract(uint arbiterFeePercentage, string gameId) public onlyOwner {
-    RPSContract newContract = new RPSContract(arbiterFeePercentage);
+  function createContract(uint arbiterFeePercentage, string memory gameId) public onlyOwner {
+    RPSContract newContract = new RPSContract(arbiterFeePercentage, gameId);
+    newContract.transferOwnership(msg.sender);
     contracts.push(address(newContract));
 
-    emit ContractCreated(address(newContract));
+    emit ContractCreated(address(newContract), gameId);
   }
 
   function getContracts() public onlyOwner view returns (address[] memory) {
