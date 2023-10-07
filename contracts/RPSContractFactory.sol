@@ -16,12 +16,14 @@ contract RPSContract is Ownable{
   uint256 arbiterFee;
   bool party1Paid;
   bool party2Paid;
+  bool winnerDecided = false;
   uint256 arbiterFeePercentage;
   string contractGameId;
 
   event StakePaid(address indexed _from, uint _value);
   event WinnerDecided(address indexed _winner, uint _value);
   event Draw(address indexed _party1, address indexed _party2, uint _value);
+  event ContractLiquidated(address indexed _payee, uint _value);
   event Log(string message);
 
   constructor(uint256 _arbiterFeePercentage, string memory _gameId) Ownable(){
@@ -31,7 +33,9 @@ contract RPSContract is Ownable{
 
   function joinContract(string memory gameId) public payable {
     require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
+    
     require(party1 == address(0) || party2 == address(0), "Game is full");
+    
     require(msg.value > 0, "Must stake a positive amount of ether");
 
     if (party1 == address(0)) {
@@ -61,7 +65,9 @@ contract RPSContract is Ownable{
     }
   }
 
-  function decideWinner(address payable winner) public onlyOwner {
+  function decideWinner(address payable winner, string memory gameId) public onlyOwner {
+    require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
+
     require(
       party1Paid && party2Paid,
       "All parties must have paid their stakes"
@@ -83,10 +89,30 @@ contract RPSContract is Ownable{
       winner.transfer(winnerPrize); // Pay winner their stake and the winner prize
       emit WinnerDecided(winner, winnerPrize);
     }
+
+    winnerDecided = true;
   }
 
-  function setArbiter(address payable _arbiter) public onlyOwner {
+  function setArbiter(address payable _arbiter, string memory gameId) public onlyOwner {
+    require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
+
     arbiter = _arbiter;
+  }
+
+  function liquidateContract(address payable _arbiter) public onlyOwner {
+    if (!winnerDecided) {
+      if(party1Paid) {
+        _arbiter.transfer(stake1);
+        emit Log("Party 1 stake liquidated");
+      }
+      if(party2Paid) {
+        _arbiter.transfer(stake2);
+        emit Log("Party 2 stake liquidated");
+      }
+
+      uint256 amountLiquidated = stake1.add(stake2);
+      emit ContractLiquidated(_arbiter, amountLiquidated);
+    }
   }
 }
 
