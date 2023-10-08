@@ -7,18 +7,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract RPSContract is Ownable{
   using SafeMath for uint256;
 
-  address payable party1;
-  address payable party2;
-  address payable arbiter;
-  uint256 stake1;
-  uint256 stake2;
-  uint256 totalStake;
-  uint256 arbiterFee;
-  bool party1Paid;
-  bool party2Paid;
-  bool winnerDecided = false;
-  uint256 arbiterFeePercentage;
-  string contractGameId;
+  address payable private party1;
+  address payable private party2;
+  address payable private arbiter;
+  uint256 private stake1;
+  uint256 private stake2;
+  uint256 private totalStake;
+  uint256 private arbiterFee;
+  bool private party1Paid;
+  bool private party2Paid;
+  bool private winnerDecided = false;
+  uint256 private arbiterFeePercentage;
+  string private contractGameId;
+  uint256 private contractBalance;
 
   event StakePaid(address indexed _from, uint _value);
   event WinnerDecided(address indexed _winner, uint _value);
@@ -51,6 +52,8 @@ contract RPSContract is Ownable{
       emit Log("Party 2 joined and paid stake");
       emit StakePaid(msg.sender, msg.value);
     }
+
+    contractBalance += msg.value;
   }
 
   function refundWager(address payable payee, string memory gameId) public onlyOwner {
@@ -58,9 +61,11 @@ contract RPSContract is Ownable{
 
     if (payee == party1) {
       party1.transfer(stake1);
+      contractBalance -= stake1;
       emit Log("Contract owner refunded the stake to Party 1");
     } else {
       party2.transfer(stake2);
+      contractBalance -= stake2;
       emit Log("Contract owner refunded the stake to Party 2");
     }
   }
@@ -90,6 +95,7 @@ contract RPSContract is Ownable{
       emit WinnerDecided(winner, winnerPrize);
     }
 
+    contractBalance = 0;
     winnerDecided = true;
   }
 
@@ -100,18 +106,8 @@ contract RPSContract is Ownable{
   }
 
   function liquidateContract(address payable _arbiter) public onlyOwner {
-    if (!winnerDecided) {
-      if(party1Paid) {
-        _arbiter.transfer(stake1);
-        emit Log("Party 1 stake liquidated");
-      }
-      if(party2Paid) {
-        _arbiter.transfer(stake2);
-        emit Log("Party 2 stake liquidated");
-      }
-
-      uint256 amountLiquidated = stake1.add(stake2);
-      emit ContractLiquidated(_arbiter, amountLiquidated);
+    if(!winnerDecided && contractBalance > 0) {
+      _arbiter.transfer(contractBalance);
     }
   }
 }
