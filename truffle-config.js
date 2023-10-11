@@ -42,7 +42,7 @@
  */
 
 require('dotenv').config();
-const { CONTRACT_OWNER_PRIVATE_KEY, HTTP_PROVIDER } = process.env;
+const { CONTRACT_OWNER_PRIVATE_KEY, GOERLI, SEPOLIA } = process.env;
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
@@ -88,8 +88,17 @@ module.exports = {
     // Useful for deploying to a public network.
     // Note: It's important to wrap the provider as a function to ensure truffle uses a new provider every time.
     goerli: {
-      provider: () => new HDWalletProvider(CONTRACT_OWNER_PRIVATE_KEY, HTTP_PROVIDER),
+      provider: () => new HDWalletProvider(CONTRACT_OWNER_PRIVATE_KEY, GOERLI),
       network_id: 5, // Goerli's id
+      gas: 8500000, // Gas limit - set it to your contract needs
+      confirmations: 2, // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 400, // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true // Skip dry run before migrations? (default: false for public nets )
+    },
+
+    sepolia: {
+      provider: () => new HDWalletProvider(CONTRACT_OWNER_PRIVATE_KEY, SEPOLIA),
+      network_id: 11155111, // Sepolia's id
       gas: 8500000, // Gas limit - set it to your contract needs
       confirmations: 2, // # of confs to wait between deployments. (default: 0)
       timeoutBlocks: 400, // # of blocks before a deployment times out  (minimum/default: 50)

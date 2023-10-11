@@ -80,12 +80,13 @@ contract RPSContract is Ownable{
 
     totalStake = stake1.add(stake2);
     arbiterFee = totalStake.mul(arbiterFeePercentage).div(10000);
+    uint256 halfArbiterFee = totalStake.mul(arbiterFeePercentage).div(10000).div(2);
     uint256 winnerPrize = totalStake.sub(arbiterFee);
 
     if (winner == arbiter) {
       // pay arbiter fee in any case, but return each stake to the proper party minus the arbiter fee
       arbiter.transfer(arbiterFee);
-      uint256 halfArbiterFee = arbiterFee.div(2);
+      // uint256 halfArbiterFee = arbiterFee.div(2);
       party1.transfer(stake1.sub(halfArbiterFee));
       party2.transfer(stake2.sub(halfArbiterFee));
       emit Draw(party1, party2, totalStake);
