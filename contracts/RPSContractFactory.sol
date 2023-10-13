@@ -32,8 +32,8 @@ contract RPSContract is Ownable{
     contractGameId = _gameId;
   }
 
-  function joinContract(string memory gameId) public payable {
-    require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
+  function joinContract(string memory _gameId) public payable {
+    require(keccak256(abi.encodePacked(_gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
     
     require(party1 == address(0) || party2 == address(0), "Game is full");
     
@@ -56,8 +56,8 @@ contract RPSContract is Ownable{
     contractBalance += msg.value;
   }
 
-  function refundWager(address payable payee, string memory gameId) public onlyOwner {
-    require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
+  function refundWager(address payable payee, string memory _gameId) public onlyOwner {
+    require(keccak256(abi.encodePacked(_gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
 
     if (payee == party1) {
       party1.transfer(stake1);
@@ -70,8 +70,8 @@ contract RPSContract is Ownable{
     }
   }
 
-  function decideWinner(address payable winner, string memory gameId) public onlyOwner {
-    require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
+  function decideWinner(address payable winner, string memory _gameId) public onlyOwner {
+    require(keccak256(abi.encodePacked(_gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
 
     require(
       party1Paid && party2Paid,
@@ -86,7 +86,6 @@ contract RPSContract is Ownable{
     if (winner == arbiter) {
       // pay arbiter fee in any case, but return each stake to the proper party minus the arbiter fee
       arbiter.transfer(arbiterFee);
-      // uint256 halfArbiterFee = arbiterFee.div(2);
       party1.transfer(stake1.sub(halfArbiterFee));
       party2.transfer(stake2.sub(halfArbiterFee));
       emit Draw(party1, party2, totalStake);
@@ -100,8 +99,8 @@ contract RPSContract is Ownable{
     winnerDecided = true;
   }
 
-  function setArbiter(address payable _arbiter, string memory gameId) public onlyOwner {
-    require(keccak256(abi.encodePacked(gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
+  function setArbiter(address payable _arbiter, string memory _gameId) public onlyOwner {
+    require(keccak256(abi.encodePacked(_gameId)) == keccak256(abi.encodePacked(contractGameId)), "Game ID does not match with contract's Game ID.");
 
     arbiter = _arbiter;
   }
@@ -118,12 +117,12 @@ contract RPSContractFactory is Ownable{
 
   event ContractCreated(address indexed _contract, string gameId);
 
-  function createContract(uint arbiterFeePercentage, string memory gameId) public onlyOwner {
-    RPSContract newContract = new RPSContract(arbiterFeePercentage, gameId);
+  function createContract(uint arbiterFeePercentage, string memory _gameId) public onlyOwner {
+    RPSContract newContract = new RPSContract(arbiterFeePercentage, _gameId);
     newContract.transferOwnership(msg.sender);
     contracts.push(address(newContract));
 
-    emit ContractCreated(address(newContract), gameId);
+    emit ContractCreated(address(newContract), _gameId);
   }
 
   function getContracts() public onlyOwner view returns (address[] memory) {
