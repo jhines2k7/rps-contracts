@@ -25,7 +25,7 @@ contract RPSContract is Ownable{
   event WinnerDecided(address indexed _winner, uint _value);
   event Draw(address indexed _party1, address indexed _party2, uint _value);
   event ContractLiquidated(address indexed _payee, uint _value);
-  event Log(string message);
+  event Log(string message, uint _value);
 
   constructor(uint256 _arbiterFeePercentage, string memory _gameId) Ownable(){
     arbiterFeePercentage = _arbiterFeePercentage;
@@ -43,13 +43,13 @@ contract RPSContract is Ownable{
       party1 = payable(msg.sender);
       stake1 = msg.value;
       party1Paid = true;
-      emit Log("Party 1 joined and paid stake");
+      emit Log("Party 1 joined and paid stake ", stake1);
       emit StakePaid(msg.sender, msg.value);
     } else {
       party2 = payable(msg.sender);
       party2Paid = true;
       stake2 = msg.value;
-      emit Log("Party 2 joined and paid stake");
+      emit Log("Party 2 joined and paid stake ", stake2);
       emit StakePaid(msg.sender, msg.value);
     }
 
@@ -62,12 +62,14 @@ contract RPSContract is Ownable{
     if (payee == party1) {
       party1.transfer(stake1);
       contractBalance -= stake1;
-      emit Log("Contract owner refunded the stake to Party 1");
+      emit Log("Contract owner refunded the stake to Party 1", stake1);
     } else {
       party2.transfer(stake2);
       contractBalance -= stake2;
-      emit Log("Contract owner refunded the stake to Party 2");
+      emit Log("Contract owner refunded the stake to Party 2", stake2);
     }
+
+    emit Log("Contract balance after refund ", contractBalance);
   }
 
   function decideWinner(address payable winner, string memory _gameId) public onlyOwner {
@@ -78,20 +80,24 @@ contract RPSContract is Ownable{
       "All parties must have paid their stakes"
     );
 
-    totalStake = stake1.add(stake2);
-    arbiterFee = totalStake.mul(arbiterFeePercentage).div(10000);
-    uint256 halfArbiterFee = totalStake.mul(arbiterFeePercentage).div(10000).div(2);
-    uint256 winnerPrize = totalStake.sub(arbiterFee);
+    uint256 stake1ArbiterFee = stake1.mul(arbiterFeePercentage).div(10000);
+    emit Log("Stake 1 arbiter fee ", stake1ArbiterFee);
+    uint256 stake2ArbiterFee = stake2.mul(arbiterFeePercentage).div(10000);
+    emit Log("Stake 2 arbiter fee ", stake2ArbiterFee);
+
+    uint256 winnerPrize = stake1.sub(stake1ArbiterFee).add(stake2).sub(stake2ArbiterFee);
+    arbiterFee = stake1ArbiterFee.add(stake2ArbiterFee);
+    emit Log("Arbiter fee calculated ", arbiterFee);
+
+    arbiter.transfer(arbiterFee);
 
     if (winner == arbiter) {
-      // pay arbiter fee in any case, but return each stake to the proper party minus the arbiter fee
-      arbiter.transfer(arbiterFee);
-      party1.transfer(stake1.sub(halfArbiterFee));
-      party2.transfer(stake2.sub(halfArbiterFee));
+      party1.transfer(stake1.sub(stake1ArbiterFee));
+      party2.transfer(stake2.sub(stake2ArbiterFee));
       emit Draw(party1, party2, totalStake);
     } else {
-      arbiter.transfer(arbiterFee); // Pay arbiter their fee
-      winner.transfer(winnerPrize); // Pay winner their stake and the winner prize
+      emit Log("Winner prize ", winnerPrize);
+      winner.transfer(winnerPrize); // Pay winner the winner prize
       emit WinnerDecided(winner, winnerPrize);
     }
 
