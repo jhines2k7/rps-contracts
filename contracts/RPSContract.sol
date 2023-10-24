@@ -8,10 +8,7 @@ contract RPSContract is Ownable{
   using SafeMath for uint256;
 
   address payable private arbiter;
-  uint256 private stake;
-  uint256 private arbiterFee;
   uint256 private arbiterFeePercentage;
-  uint256 private contractBalance;
 
   event StakePaid(address indexed _from, uint _value);
   event StakeRefunded(address indexed _to, uint _value);
@@ -20,78 +17,87 @@ contract RPSContract is Ownable{
   event ContractLiquidated(address indexed _payee, uint _value);
   event Log(string message, uint _value);
 
-  constructor(uint256 _arbiterFeePercentage) Ownable(){
+  constructor(uint256 _arbiterFeePercentage, address payable _arbiter) Ownable(){
     arbiterFeePercentage = _arbiterFeePercentage;
+    arbiter = _arbiter;
   }
 
-  function joinGame() public payable {    
+  function payStake() public payable {    
     require(msg.value > 0, "Must stake a positive amount of ether");
 
     emit StakePaid(msg.sender, msg.value);
-
-    contractBalance += msg.value;
   }
 
-  function refundWager(address payable payee) public payable onlyOwner {
-    payee.transfer(msg.value);
-    emit StakeRefunded(payee, msg.value);
+  function refundWager(address payable _payee, uint256 _amount) public payable onlyOwner {
+    _payee.transfer(_amount);
 
-    contractBalance -= msg.value;
-    emit Log("Contract balance after refund ", contractBalance);
+    emit StakeRefunded(_payee, _amount);
+    emit Log("Contract balance after refund ", address(this).balance);
   }
 
-  function payWinner(address payable winner, uint256 _stake1, uint256 _stake2) public onlyOwner {
-    emit Log("Total stake for this game", _stake1.add(_stake2));
-    uint256 stake1ArbiterFee = _stake1.mul(arbiterFeePercentage).div(10000);
+  function calculateStakes(uint256 _player1Stake, uint256 _player2Stake) internal returns (uint256, uint256) {
+    emit Log("Total stake for this game", _player1Stake.add(_player2Stake));
+    uint256 stake1ArbiterFee = _player1Stake.mul(arbiterFeePercentage).div(10000);
     emit Log("Stake 1 arbiter fee ", stake1ArbiterFee);
-    uint256 stake2ArbiterFee = _stake2.mul(arbiterFeePercentage).div(10000);
+    uint256 stake2ArbiterFee = _player2Stake.mul(arbiterFeePercentage).div(10000);
     emit Log("Stake 2 arbiter fee ", stake2ArbiterFee);
 
-    uint256 winnerPrize = _stake1.sub(stake1ArbiterFee).add(_stake2).sub(stake2ArbiterFee);
-    arbiterFee = stake1ArbiterFee.add(stake2ArbiterFee);
-    emit Log("Arbiter fee calculated for winner", arbiterFee);
+    uint256 arbiterFee = stake1ArbiterFee.add(stake2ArbiterFee);
+    emit Log("Arbiter fee calculated for game", arbiterFee);
 
     arbiter.transfer(arbiterFee);
-    contractBalance -= arbiterFee;
 
+    return (stake1ArbiterFee, stake2ArbiterFee);
+  }
+
+  function payWinner(address payable winner, uint256 _player1Stake, uint256 _player2Stake) public onlyOwner {
+    // (uint256 stake1ArbiterFee, uint256 stake2ArbiterFee) = calculateStakes(_player1Stake, _player2Stake);
+    emit Log("Total stake for this game", _player1Stake.add(_player2Stake));
+    uint256 stake1ArbiterFee = _player1Stake.mul(arbiterFeePercentage).div(10000);
+    emit Log("Stake 1 arbiter fee ", stake1ArbiterFee);
+    uint256 stake2ArbiterFee = _player2Stake.mul(arbiterFeePercentage).div(10000);
+    emit Log("Stake 2 arbiter fee ", stake2ArbiterFee);
+
+    uint256 arbiterFee = stake1ArbiterFee.add(stake2ArbiterFee);
+    emit Log("Arbiter fee calculated for game", arbiterFee);
+
+    arbiter.transfer(arbiterFee);
+
+    uint256 winnerPrize = _player1Stake.sub(stake1ArbiterFee).add(_player2Stake).sub(stake2ArbiterFee);
     emit Log("Winner prize ", winnerPrize);
     winner.transfer(winnerPrize);
     emit WinnerDecided(winner, winnerPrize);
-
-    contractBalance -= winnerPrize;
   }
 
-  function payDraw(address payable _player1, address payable _player2, uint256 _stake1, uint256 _stake2) public onlyOwner {
-    uint256 stake1ArbiterFee = _stake1.mul(arbiterFeePercentage).div(10000);
+  function payDraw(address payable _player1, address payable _player2, uint256 _player1Stake, uint256 _player2Stake) public onlyOwner {
+    // (uint256 stake1ArbiterFee, uint256 stake2ArbiterFee) = calculateStakes(_player1Stake, _player2Stake);
+    emit Log("Total stake for this game", _player1Stake.add(_player2Stake));
+    uint256 stake1ArbiterFee = _player1Stake.mul(arbiterFeePercentage).div(10000);
     emit Log("Stake 1 arbiter fee ", stake1ArbiterFee);
-    uint256 stake2ArbiterFee = _stake2.mul(arbiterFeePercentage).div(10000);
+    uint256 stake2ArbiterFee = _player2Stake.mul(arbiterFeePercentage).div(10000);
     emit Log("Stake 2 arbiter fee ", stake2ArbiterFee);
 
-    arbiterFee = stake1ArbiterFee.add(stake2ArbiterFee);
-    emit Log("Arbiter fee calculated for draw", arbiterFee);
+    uint256 arbiterFee = stake1ArbiterFee.add(stake2ArbiterFee);
+    emit Log("Arbiter fee calculated for game", arbiterFee);
 
     arbiter.transfer(arbiterFee);
-    contractBalance -= arbiterFee;
 
-    uint256 player1Prize = _stake1.sub(stake1ArbiterFee);
-    uint256 player2Prize = _stake2.sub(stake2ArbiterFee);
+    uint256 player1Prize = _player1Stake.sub(stake1ArbiterFee);
+    uint256 player2Prize = _player2Stake.sub(stake2ArbiterFee);
 
     _player1.transfer(player1Prize);
-    contractBalance -= player1Prize;
-
     _player2.transfer(player2Prize);
-    contractBalance -= player2Prize;
 
     emit Draw(_player1, _player2, player1Prize, player2Prize);
   }
 
-  function setArbiter(address payable _arbiter) public onlyOwner {
-    arbiter = _arbiter;
+  function liquidateContract() public onlyOwner {
+    uint256 contractBalance = address(this).balance;
+    arbiter.transfer(contractBalance);
+    emit ContractLiquidated(arbiter, contractBalance);
   }
 
-  function liquidateContract(address payable _arbiter) public onlyOwner {
-    _arbiter.transfer(contractBalance);
-    contractBalance = 0;
-    emit ContractLiquidated(_arbiter, contractBalance);
+  function getBalance() public onlyOwner view returns (uint256) {
+    return address(this).balance;
   }
 }
