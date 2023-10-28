@@ -10,7 +10,7 @@ contract RPSContract is Ownable{
   event StakePaid(address indexed _from, uint _value);
   event StakeRefunded(address indexed _to, uint _value);
   event WinnerDecided(address indexed _winner, uint _value);
-  event Draw(address indexed _player1, uint _stake1, address indexed _player2, uint _stake2);
+  event DrawGame(address indexed _player1, uint _stake1, address indexed _player2, uint _stake2);
   event ContractLiquidated(address indexed _payee, uint _value);
   event Log(string message, uint _value);
 
@@ -22,25 +22,26 @@ contract RPSContract is Ownable{
 
   function refundWager(address payable _payee, 
                         uint256 _amount, 
-                        uint256 _feeMarkup, 
+                        uint256 _fees, 
                         string memory _gameId) public payable onlyOwner {
-    emit Log(string(abi.encodePacked("Refund markup for game: ", _gameId)), _feeMarkup);
+    emit Log(string(abi.encodePacked("Fees for game: ", _gameId)), _fees);
 
-    _payee.transfer(_amount.sub(_feeMarkup));
+    uint256 refundAmount = _amount.sub(_fees);
 
-    emit StakeRefunded(_payee, _amount.sub(_feeMarkup));
-    emit Log("Contract balance after refund ", address(this).balance);
+    _payee.transfer(refundAmount);
+
+    emit StakeRefunded(_payee, refundAmount);
   }
 
   function payWinner(address payable winner, 
                       uint256 _player1Stake, 
                       uint256 _player2Stake,
-                      uint256 _feeMarkup,
+                      uint256 _fees,
                       string memory _gameId) public onlyOwner {
-    emit Log(string(abi.encodePacked("Fee markup for game winner: ", _gameId)), _feeMarkup);
+    emit Log(string(abi.encodePacked("Fees for game: ", _gameId)), _fees);
 
-    uint256 winnerPrize = _player1Stake.add(_player2Stake).sub(_feeMarkup);
-    emit Log("Winner prize ", winnerPrize);
+    uint256 winnerPrize = _player1Stake.add(_player2Stake).sub(_fees);
+    
     winner.transfer(winnerPrize);
     emit WinnerDecided(winner, winnerPrize);
   }
@@ -49,17 +50,17 @@ contract RPSContract is Ownable{
                   address payable _player2, 
                   uint256 _player1Stake, 
                   uint256 _player2Stake,
-                  uint256 _feeMarkup,
+                  uint256 _fees,
                   string memory _gameId) public onlyOwner {
-    emit Log(string(abi.encodePacked("Fee markup for game draw: ", _gameId)), _feeMarkup);
+    emit Log(string(abi.encodePacked("Fees for game: ", _gameId)), _fees);
 
-    uint256 player1Prize = _player1Stake.sub(_feeMarkup);
-    uint256 player2Prize = _player2Stake.sub(_feeMarkup);
+    uint256 player1DrawPrize = _player1Stake.sub(_fees);
+    uint256 player2DrawPrize = _player2Stake.sub(_fees);
 
-    _player1.transfer(player1Prize);
-    _player2.transfer(player2Prize);
+    _player1.transfer(player1DrawPrize);
+    _player2.transfer(player2DrawPrize);
 
-    emit Draw(_player1, player1Prize, _player2, player2Prize);
+    emit DrawGame(_player1, player1DrawPrize, _player2, player2DrawPrize);
   }
 
   // function to withdraw all funds from the contract to the owner's address
