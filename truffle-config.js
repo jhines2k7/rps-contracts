@@ -42,7 +42,7 @@
  */
 
 require('dotenv').config();
-const { CONTRACT_OWNER_PRIVATE_KEY, GOERLI, SEPOLIA } = process.env;
+const { CONTRACT_OWNER_PRIVATE_KEY, GOERLI, SEPOLIA, RPS_OWNER_PRIVATE_KEY, MAINNET} = process.env;
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
@@ -103,6 +103,16 @@ module.exports = {
       confirmations: 2, // # of confs to wait between deployments. (default: 0)
       timeoutBlocks: 400, // # of blocks before a deployment times out  (minimum/default: 50)
       skipDryRun: true // Skip dry run before migrations? (default: false for public nets )
+    },
+
+    mainnet: {
+      provider: () => new HDWalletProvider(RPS_OWNER_PRIVATE_KEY, MAINNET),
+      network_id: 1,       // Mainnet's id
+      gas: 9000000,        // Gas sent with each transaction
+      gasPrice: 40000000000,  // 40 gwei (default: 20 gwei)
+      confirmations: 2,    // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     },
 
     //
