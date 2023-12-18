@@ -37,7 +37,7 @@ def main():
     key_file_location = 'service-account.json'
 
     # Specify the name of the folder you want to retrieve
-    folder_name = 'rock-paper-scissors'
+    folder_name = 'rock-paper-scissors-v2'
 
     try:
         # Authenticate and construct service.
@@ -66,7 +66,7 @@ def main():
         # Create a new folder
         new_folder_id = None
         # Define folder details
-        folder_name = 'rock-paper-scissors'
+        # folder_name = 'rock-paper-scissors'
         new_folder_metadata = {'name': folder_name, 'mimeType': 'application/vnd.google-apps.folder'}
 
         # Use the files().create() method to create the folder
