@@ -1,5 +1,5 @@
-const RPSContract = artifacts.require('RPSContract');
+const RPSContractV2 = artifacts.require('RPSContractV2');
 
 module.exports = function (deployer) {
-  deployer.deploy(RPSContract);
+  deployer.deploy(RPSContractV2);
 };
