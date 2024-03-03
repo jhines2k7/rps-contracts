@@ -42,7 +42,7 @@
  */
 
 require('dotenv').config();
-const { CONTRACT_OWNER_PRIVATE_KEY, GOERLI, SEPOLIA, RPS_OWNER_PRIVATE_KEY, MAINNET } = process.env;
+const { CONTRACT_OWNER_PRIVATE_KEY, SEPOLIA, MAINNET } = process.env;
 
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 
